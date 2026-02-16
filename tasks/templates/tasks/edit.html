@@ -1,0 +1,28 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Task - Secure Task Manager</title>
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
+</head>
+
+<body>
+    <div class="container">
+        <h1>✏️ Edit Task</h1>
+        <p style="color: #718096; margin-bottom: 20px;">Editing: <strong>{{ task.title }}</strong></p>
+
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-create">Create Task</button>
+                <a href="{% url 'home' %}" class="btn btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</body>
+
+</html>

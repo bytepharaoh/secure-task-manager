@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Secure Task Manager</title>
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
+    <style>
+        .validation-hint {
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding-left: 5px;
+        }
+        
+        .validation-hint li {
+            list-style: none;
+            padding: 4px 0;
+            color: #6b7280;
+            transition: all 0.3s ease;
+        }
+        
+        .validation-hint li::before {
+            content: '○ ';
+            margin-right: 5px;
+        }
+        
+        .validation-hint li.valid {
+            color: #10b981;
+        }
+        
+        .validation-hint li.valid::before {
+            content: '✓ ';
+        }
+        
+        .validation-hint li.invalid {
+            color: #ef4444;
+        }
+        
+        .validation-hint li.invalid::before {
+            content: '✗ ';
+        }
+        
+        .password-match {
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: none;
+        }
+        
+        .password-match.valid {
+            display: block;
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .password-match.invalid {
+            display: block;
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container auth-container">
+        <h1>📝 Create Account</h1>
+        <p style="color: #718096; margin-bottom: 30px;">Join us and start managing your tasks!</p>
+        
+        <form method="POST" id="registerForm">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <ul class="errorlist">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            
+            <p>
+                <label for="{{ form.username.id_for_label }}">Username:</label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.username.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </p>
+            
+            <p>
+                <label for="{{ form.password1.id_for_label }}">Password:</label>
+                {{ form.password1 }}
+                {% if form.password1.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.password1.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <ul class="validation-hint" id="passwordHints">
+                    <li id="length">At least 8 characters</li>
+                    <li id="notNumeric">Not entirely numeric</li>
+                    <li id="notCommon">Not a commonly used password</li>
+                </ul>
+            </p>
+            
+            <p>
+                <label for="{{ form.password2.id_for_label }}">Confirm Password:</label>
+                {{ form.password2 }}
+                {% if form.password2.errors %}
+                    <ul class="errorlist">
+                        {% for error in form.password2.errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+                <div class="password-match" id="passwordMatch"></div>
+            </p>
+            
+            <button type="submit" class="btn" id="submitBtn" style="width: 100%; margin-top: 20px;">Register</button>
+        </form>
+        
+        <div class="auth-link">
+            <p>Already have an account? <a href="{% url 'login' %}">Login here</a></p>
+        </div>
+    </div>
+
+    <script>
+        const password1 = document.getElementById('{{ form.password1.id_for_label }}');
+        const password2 = document.getElementById('{{ form.password2.id_for_label }}');
+        const lengthHint = document.getElementById('length');
+        const notNumericHint = document.getElementById('notNumeric');
+        const notCommonHint = document.getElementById('notCommon');
+        const passwordMatch = document.getElementById('passwordMatch');
+        const submitBtn = document.getElementById('submitBtn');
+
+        // Common passwords list (simplified)
+        const commonPasswords = ['password', '12345678', 'qwerty', 'abc123', 'password123', '111111', '123123'];
+
+        // Validate password as user types
+        password1.addEventListener('input', function() {
+            const value = this.value;
+            
+            // Check length
+            if (value.length >= 8) {
+                lengthHint.classList.remove('invalid');
+                lengthHint.classList.add('valid');
+            } else {
+                lengthHint.classList.remove('valid');
+                lengthHint.classList.add('invalid');
+            }
+            
+            // Check if entirely numeric
+            if (value.length > 0 && !/^\d+$/.test(value)) {
+                notNumericHint.classList.remove('invalid');
+                notNumericHint.classList.add('valid');
+            } else if (value.length > 0) {
+                notNumericHint.classList.remove('valid');
+                notNumericHint.classList.add('invalid');
+            } else {
+                notNumericHint.classList.remove('valid', 'invalid');
+            }
+            
+            // Check if common password
+            if (value.length > 0 && !commonPasswords.includes(value.toLowerCase())) {
+                notCommonHint.classList.remove('invalid');
+                notCommonHint.classList.add('valid');
+            } else if (value.length > 0) {
+                notCommonHint.classList.remove('valid');
+                notCommonHint.classList.add('invalid');
+            } else {
+                notCommonHint.classList.remove('valid', 'invalid');
+            }
+            
+            // Check password match
+            checkPasswordMatch();
+        });
+
+        // Check if passwords match
+        password2.addEventListener('input', checkPasswordMatch);
+
+        function checkPasswordMatch() {
+            const pass1 = password1.value;
+            const pass2 = password2.value;
+            
+            if (pass2.length === 0) {
+                passwordMatch.style.display = 'none';
+                return;
+            }
+            
+            if (pass1 === pass2) {
+                passwordMatch.textContent = '✓ Passwords match!';
+                passwordMatch.className = 'password-match valid';
+            } else {
+                passwordMatch.textContent = '✗ Passwords do not match';
+                passwordMatch.className = 'password-match invalid';
+            }
+        }
+
+        // Reset hints on page load
+        window.addEventListener('load', function() {
+            lengthHint.classList.remove('valid', 'invalid');
+            notNumericHint.classList.remove('valid', 'invalid');
+            notCommonHint.classList.remove('valid', 'invalid');
+        });
+    </script>
+</body>
+</html>

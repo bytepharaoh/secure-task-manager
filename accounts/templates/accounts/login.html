@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Secure Task Manager</title>
+    <link rel="stylesheet" href="{% static 'tasks/css/style.css' %}">
+</head>
+<body>
+    <div class="container auth-container">
+        <h1>🔐 Login</h1>
+        <p style="color: #718096; margin-bottom: 30px;">Welcome back! Please login to your account.</p>
+        
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+                <div class="errorlist">
+                    <li>Invalid username or password. Please try again.</li>
+                </div>
+            {% endif %}
+            
+            <p>
+                <label for="{{ form.username.id_for_label }}">Username:</label>
+                {{ form.username }}
+            </p>
+            
+            <p>
+                <label for="{{ form.password.id_for_label }}">Password:</label>
+                {{ form.password }}
+            </p>
+            
+            <button type="submit" class="btn" style="width: 100%; margin-top: 20px;">Login</button>
+        </form>
+        
+        <div class="auth-link">
+            <p>Don't have an account? <a href="{% url 'register' %}">Register here</a></p>
+        </div>
+    </div>
+</body>
+</html>
