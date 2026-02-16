@@ -1,17 +1,8 @@
-pip freeze > requirements.txt
-```
-
----
-
-### Create `Procfile` (for deployment)
-
-Create `Procfile` in project root:
-```
-web: gunicorn config.wsgi --log-file -
-```
-
----
-
-### Create `runtime.txt` (optional, specifies Python version)
-```
-python-3.14.0
+asgiref==3.11.1
+dj-database-url==3.1.0
+Django==6.0.2
+gunicorn==25.1.0
+packaging==26.0
+python-decouple==3.8
+sqlparse==0.5.5
+whitenoise==6.11.0
