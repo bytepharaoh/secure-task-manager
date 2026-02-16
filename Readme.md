@@ -4,7 +4,7 @@ A production-ready Django task management application demonstrating modern web d
 
 ## 🌐 Live Demo
 
-**Production URL:** [http://158.160.210.63](http://158.160.210.63)
+**Production URL:** http://securetaskmanager.duckdns.org/
 
 **Demo Credentials:**
 - Username: `demo`
