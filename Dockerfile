@@ -25,10 +25,7 @@ RUN pip install --upgrade pip && \
 COPY . .
 
 # Create directory for static files
-RUN mkdir -p /app/staticfiles
-
-# Collect static files
-RUN python manage.py collectstatic --noinput
+RUN mkdir -p /app/staticfiles && chmod +x /app/entrypoint.sh
 
 # Create non-root user
 RUN useradd -m -u 1000 django && \
@@ -38,9 +35,11 @@ USER django
 # Expose port
 EXPOSE 8000
 
+ENTRYPOINT ["/app/entrypoint.sh"]
+
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000')"
+    CMD python -c "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/', timeout=5)"
 
 # Run gunicorn
 CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "config.wsgi:application"]

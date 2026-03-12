@@ -18,7 +18,7 @@
             {% csrf_token %}
             {{ form.as_p }}
             <div style="display: flex; gap: 10px; margin-top: 20px;">
-                <button type="submit" class="btn btn-create">Create Task</button>
+                <button type="submit" class="btn btn-create">Save Changes</button>
                 <a href="{% url 'home' %}" class="btn btn-cancel">Cancel</a>
             </div>
         </form>

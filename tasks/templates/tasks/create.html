@@ -14,7 +14,7 @@
         <h1>➕ Create New Task</h1>
         <p style="color: #718096; margin-bottom: 20px;">Fill in the details below to create a new task.</p>
 
-        <form method="POST">
+        <form method="POST" action="{% url 'create_task_submit' %}">
             {% csrf_token %}
             {{ form.as_p }}
             <div style="display: flex; gap: 10px; margin-top: 20px;">

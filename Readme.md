@@ -1,464 +1,208 @@
 # Secure Task Manager
 
-A production-ready Django task management application demonstrating modern web development practices, user authentication, and comprehensive security features. Built with Django 6.0.2 and Python 3.12.
+Secure Task Manager is a server-rendered Django application for authenticated users to manage personal tasks with priority and due-date tracking. The codebase is intentionally small, but it now includes the baseline controls expected in a production-minded Django service: object-level authorization, safer state-changing routes, containerized deployment, and CI validation.
 
-## 🌐 Live Demo
+## What changed
 
-**Production URL:** http://securetaskmanager.duckdns.org/
+- Hardened authentication and authorization flow.
+- Restricted task mutation to the owning user.
+- Moved destructive and state-changing actions to `POST`.
+- Added registration with unique email capture.
+- Improved security-related settings for reverse-proxy deployments.
+- Fixed PostgreSQL container support by adding a database driver.
+- Added Docker entrypoint orchestration and GitHub Actions CI.
+- Rewrote the project documentation to reflect how the app actually runs.
 
-**Demo Credentials:**
-- Username: `demo`
-- Password: `demo2026`
+## Stack
 
-*Feel free to explore all features. Demo account resets daily.*
+- Python 3.12
+- Django 6.0
+- Gunicorn
+- PostgreSQL or SQLite
+- WhiteNoise for static assets
+- Docker and Docker Compose
+- GitHub Actions
 
----
+## Application capabilities
 
-## ✨ Features
+- User registration, login, and logout
+- Per-user task isolation
+- Task creation, editing, deletion, and completion toggle
+- Priority-aware task ordering
+- Optional due dates
+- Django admin for operational access
 
-### Core Functionality
-- ✅ User authentication (registration, login, logout)
-- ✅ Task CRUD operations (Create, Read, Update, Delete)
-- ✅ Task priorities (Low, Medium, High)
-- ✅ Due date tracking with calendar picker
-- ✅ Task completion toggle
-- ✅ Automatic sorting by priority and due date
-- ✅ User isolation - each user sees only their tasks
+## Security posture
 
-### Security
-- 🔒 Secure password hashing (Django PBKDF2)
-- 🛡️ CSRF protection on all forms
-- 🔐 Login-required view protection
-- 🚫 SQL injection prevention (Django ORM)
-- 🔑 Environment-based configuration
-- ⚠️ Production-ready security headers
+The application uses Django’s built-in authentication system and standard middleware protections, with a few important improvements:
 
----
+- Every task lookup used for edit, delete, or completion toggle is scoped to `request.user`.
+- Logout, delete, toggle, and create submission paths use `POST`, which removes unsafe state changes over `GET`.
+- CSRF middleware is active across forms.
+- Secure cookie and transport settings are configurable from environment variables.
+- Proxy-aware SSL handling is enabled for deployments behind Nginx or another load balancer.
+- Password validation uses Django’s built-in validators.
 
-## 🏗️ Technical Stack
+This is still a session-based web app, not a multi-tenant platform. If you plan to expose it publicly, review `DEBUG`, `ALLOWED_HOSTS`, `CSRF_TRUSTED_ORIGINS`, TLS termination, and secret management before deployment.
 
-### Backend
-- **Django 6.0.2** - Web framework
-- **Python 3.12** - Programming language
-- **Gunicorn** - WSGI HTTP server
-- **PostgreSQL/SQLite** - Database
-- **Whitenoise** - Static file serving
+## Project layout
 
-### Security & Configuration
-- **python-decouple** - Environment variable management
-- **dj-database-url** - Database configuration
-- **Django Auth** - Built-in authentication system
-
-### Deployment
-- **Docker** - Containerization
-- **Docker Compose** - Multi-container orchestration
-- **Nginx** - Reverse proxy & static files
-- **Systemd** - Process management (alternative)
-
----
-
-## 🚀 Quick Start
-
-### Option 1: Docker (Recommended)
-
-**Prerequisites:** Docker & Docker Compose installed
-
-```bash
-# 1. Clone repository
-git clone https://github.com/bytepharaoh/secure-task-manager.git
-cd secure-task-manager
-
-# 2. Setup environment
-cp .env.example .env
-# Edit .env and set SECRET_KEY
-
-# 3. Start containers
-docker-compose up -d
-
-# 4. Run migrations
-docker-compose exec web python manage.py migrate
-
-# 5. Create admin user
-docker-compose exec web python manage.py createsuperuser
-
-# 6. Access application
-open http://localhost
+```text
+.
+├── accounts/                  # Registration and auth-related views/templates
+├── tasks/                     # Task domain logic, forms, templates, tests
+├── config/                    # Django settings and root URL configuration
+├── .github/workflows/ci.yml   # CI checks and Docker build validation
+├── Dockerfile                 # Production image
+├── docker-compose.yml         # App + PostgreSQL + Nginx local/prod-style stack
+├── entrypoint.sh              # Migrations and collectstatic before app start
+├── nginx.conf                 # Reverse proxy and static file config
+└── requirements.txt
 ```
 
-**Full Docker documentation:** [DOCKER.md](DOCKER.md)
+## Local development
 
----
+### Prerequisites
 
-### Option 2: Local Development
+- Python 3.12
+- `pip`
+- virtual environment tooling
 
-**Prerequisites:** Python 3.12+, pip, virtualenv
+### Setup
 
 ```bash
-# 1. Clone and setup environment
-git clone https://github.com/bytepharaoh/secure-task-manager.git
-cd secure-task-manager
-python3 -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 2. Install dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
 pip install -r requirements.txt
-
-# 3. Create .env file
 cp .env.example .env
-# Edit .env with your configuration
-
-# 4. Setup database
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py collectstatic --noinput
-
-# 5. Run development server
 python manage.py runserver
-
-# 6. Access at http://127.0.0.1:8000
 ```
 
----
+The default database is SQLite unless `DATABASE_URL` is set.
 
-## 📁 Project Structure
+## Environment configuration
 
-```
-secure-task-manager/
-├── accounts/              # Authentication app
-│   ├── templates/         # Login & registration
-│   ├── views.py
-│   └── urls.py
-├── tasks/                 # Task management app
-│   ├── static/            # CSS, JavaScript
-│   ├── templates/         # Task views
-│   ├── models.py          # Data models
-│   ├── forms.py           # Task forms
-│   ├── views.py           # Business logic
-│   └── urls.py
-├── config/                # Project configuration
-│   ├── settings.py
-│   ├── urls.py
-│   └── wsgi.py
-├── Dockerfile             # Docker image definition
-├── docker-compose.yml     # Multi-container setup
-├── nginx.conf             # Nginx configuration
-├── requirements.txt       # Python dependencies
-├── .env.example           # Environment template
-└── manage.py
-```
+The project reads configuration from environment variables through `python-decouple`.
 
----
-
-## 🔒 Security Features
-
-### Authentication & Authorization
-- Session-based authentication with secure cookies
-- Password strength validation (min 8 chars, not all numeric)
-- CSRF token protection on all state-changing operations
-- Login-required decorators for protected views
-- User-specific data isolation
-
-### Configuration Security
-- Environment variables for sensitive data (`.env` file)
-- SECRET_KEY separation from codebase
-- Debug mode disabled in production
-- ALLOWED_HOSTS whitelist
-- Security middleware enabled
-
-### Production Headers
-```python
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-SECURE_HSTS_SECONDS = 31536000
-X_FRAME_OPTIONS = 'DENY'
-```
-
-### Database Security
-- Django ORM prevents SQL injection
-- Parameterized queries
-- No raw SQL execution
-- Password hashing with PBKDF2
-
----
-
-## 🐳 Docker Deployment
-
-### Architecture
-
-```
-┌─────────────────────────────┐
-│  Nginx (Reverse Proxy)      │  Port 80
-│  - Static file serving      │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│  Django + Gunicorn           │  Port 8000
-│  - Application server       │
-└──────────────┬──────────────┘
-               │
-┌──────────────▼──────────────┐
-│  PostgreSQL Database         │  Port 5432
-│  - Persistent storage       │
-└─────────────────────────────┘
-```
-
-### Services
-- **web** - Django application with Gunicorn
-- **db** - PostgreSQL 16 database
-- **nginx** - Reverse proxy and static file server
-
-### Volumes
-- `postgres_data` - Database persistence
-- `static_volume` - Shared static files
-
-### Environment Variables
-
-Create `.env` file with:
+Core variables:
 
 ```bash
-SECRET_KEY=<generate-secure-key>
-DEBUG=False
-ALLOWED_HOSTS=your-domain.com,localhost
-DATABASE_URL=postgresql://user:password@db:5432/dbname
+SECRET_KEY=change-me
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
+CSRF_TRUSTED_ORIGINS=http://127.0.0.1,http://localhost
+DATABASE_URL=sqlite:///db.sqlite3
 ```
 
-**Generate SECRET_KEY:**
+Production-oriented variables:
+
 ```bash
-python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+SECURE_SSL_REDIRECT=True
+SESSION_COOKIE_SECURE=True
+CSRF_COOKIE_SECURE=True
+SECURE_HSTS_SECONDS=31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS=True
+SECURE_HSTS_PRELOAD=True
 ```
 
----
+If TLS is terminated upstream, keep `SECURE_PROXY_SSL_HEADER` aligned with your proxy configuration.
 
-## 🔧 Development
+## Running with Docker
 
-### Running Tests
+The containerized stack includes:
+
+- `db`: PostgreSQL 16
+- `web`: Django + Gunicorn
+- `nginx`: reverse proxy in front of the app
+
+### Start the stack
 
 ```bash
-# Local
-python manage.py test
-
-# Docker
-docker-compose exec web python manage.py test
+cp .env.example .env
+docker compose up --build
 ```
 
-### Database Migrations
+### Create an admin user
 
 ```bash
-# Create migrations
-python manage.py makemigrations
-
-# Apply migrations
-python manage.py migrate
-
-# Check migration status
-python manage.py showmigrations
+docker compose exec web python manage.py createsuperuser
 ```
 
-### Collect Static Files
+### Stop the stack
 
 ```bash
-python manage.py collectstatic --noinput
+docker compose down
 ```
 
-### Code Quality
+The image entrypoint runs `migrate` and `collectstatic` before starting Gunicorn. That keeps startup deterministic in local and simple server deployments.
+
+## Quality gates
+
+### Run checks locally
 
 ```bash
-# Check for issues
 python manage.py check
+python manage.py test
+```
 
-# Django deployment checklist
+### GitHub Actions
+
+`.github/workflows/ci.yml` runs:
+
+- dependency installation
+- `python manage.py check`
+- `python manage.py test`
+- Docker image build validation
+
+That gives you a minimum safety net for framework-level regressions and packaging failures.
+
+## Auth and authorization notes
+
+The highest-risk issue in the original codebase was authorization, not authentication. Login was present, but task mutation views fetched tasks by primary key only. In Django, that means any authenticated user who can guess another task ID could edit, delete, or toggle it unless the queryset is scoped properly.
+
+The refactor addresses that by resolving tasks through the authenticated user:
+
+```python
+get_object_or_404(Task, pk=pk, user=request.user)
+```
+
+That pattern should remain the default for any future task-specific action.
+
+## Testing focus
+
+The current test suite covers:
+
+- registration and login session behavior
+- duplicate email rejection on sign-up
+- logout method restrictions
+- per-user task visibility
+- owner-only edit, delete, and toggle behavior
+- task creation ownership assignment
+
+If the project grows, the next logical step is splitting unit tests from request/flow tests and adding coverage for forms plus admin behavior.
+
+## Suggested next improvements
+
+- Replace the built-in `User` model with a custom user model before the project grows further.
+- Introduce service or selector layers if task workflows become more complex.
+- Add structured logging and Sentry or OpenTelemetry instrumentation.
+- Add pagination and filtering once task counts increase.
+- Consider Django REST Framework only if an API is actually needed.
+
+## Operations
+
+Useful commands:
+
+```bash
+python manage.py showmigrations
 python manage.py check --deploy
+docker compose logs -f web
+docker compose exec db pg_dump -U django taskmanager > backup.sql
 ```
 
----
+## License
 
-## 📊 API Endpoints
-
-### Authentication
-- `GET /accounts/login/` - Login page
-- `POST /accounts/login/` - Login submission
-- `GET /accounts/register/` - Registration page
-- `POST /accounts/register/` - Registration submission
-- `POST /accounts/logout/` - Logout
-
-### Tasks
-- `GET /` - Task list (requires authentication)
-- `GET /create/` - Create task form
-- `POST /create/` - Create task submission
-- `GET /edit/<id>/` - Edit task form
-- `POST /edit/<id>/` - Edit task submission
-- `GET /delete/<id>/` - Delete task (with confirmation)
-- `GET /toggle/<id>/` - Toggle task completion
-
----
-
-## 🔄 Update & Maintenance
-
-### Update Application
-
-```bash
-# Docker deployment
-docker-compose down
-git pull origin main
-docker-compose up -d --build
-docker-compose exec web python manage.py migrate
-
-# Traditional deployment
-git pull origin main
-source venv/bin/activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py collectstatic --noinput
-# Restart application server
-```
-
-### Backup Database
-
-```bash
-# Docker (PostgreSQL)
-docker-compose exec db pg_dump -U django taskmanager > backup_$(date +%Y%m%d).sql
-
-# Local (SQLite)
-cp db.sqlite3 backups/db_$(date +%Y%m%d).sqlite3
-```
-
----
-
-## 📈 Performance & Scalability
-
-### Current Capabilities
-- Handles moderate traffic loads
-- Efficient query optimization with Django ORM
-- Static file caching with Whitenoise
-- Database connection pooling
-
-### Scaling Options
-- Horizontal scaling with load balancer
-- Database read replicas
-- Redis for session storage and caching
-- CDN for static assets
-- Async task queue (Celery) for background jobs
-
----
-
-## 🤝 Contributing
-
-We welcome contributions! Please follow these guidelines:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Follow PEP 8 style guide
-4. Write tests for new features
-5. Commit with clear messages (`git commit -m 'Add feature: ...'`)
-6. Push to your branch (`git push origin feature/AmazingFeature`)
-7. Open a Pull Request
-
-### Development Guidelines
-- Use Django's built-in features when possible
-- Follow the DRY principle
-- Write docstrings for functions and classes
-- Keep views focused and models comprehensive
-- Use Django ORM instead of raw SQL queries
-
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Static files not loading:**
-```bash
-python manage.py collectstatic --noinput
-```
-
-**Database migrations failing:**
-```bash
-python manage.py migrate --fake-initial
-```
-
-**Docker containers not starting:**
-```bash
-docker-compose logs
-docker-compose down -v  # Remove volumes
-docker-compose up -d --build
-```
-
-**Permission errors:**
-```bash
-# Check file permissions
-ls -la db.sqlite3
-# Ensure proper ownership
-```
-
----
-
-## 📚 Documentation
-
-- [DOCKER.md](DOCKER.md) - Complete Docker deployment guide
-- [Django Documentation](https://docs.djangoproject.com/)
-- [Docker Documentation](https://docs.docker.com/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-
----
-
-## 🗺️ Roadmap
-
-### Planned Features
-- [ ] REST API with Django REST Framework
-- [ ] Task categories and tags
-- [ ] Email notifications for due tasks
-- [ ] Task sharing between users
-- [ ] File attachments
-- [ ] Advanced search and filtering
-- [ ] Calendar view
-- [ ] Mobile application
-- [ ] Two-factor authentication
-- [ ] Activity logs and audit trails
-
-### Performance Improvements
-- [ ] Redis caching layer
-- [ ] PostgreSQL full-text search
-- [ ] WebSocket support for real-time updates
-- [ ] API rate limiting
-- [ ] Database query optimization
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Ziad (BytePharaoh)**
-
-- GitHub: [@bytepharaoh](https://github.com/bytepharaoh)
-- Project: [Secure Task Manager](https://github.com/bytepharaoh/secure-task-manager)
-
----
-
-## 🙏 Acknowledgments
-
-- Built with [Django](https://www.djangoproject.com/)
-- Containerized with [Docker](https://www.docker.com/)
-- Inspired by modern task management applications
-- Thanks to the Django and open-source communities
-
----
-
-## 📞 Support
-
-- **Issues:** [GitHub Issues](https://github.com/bytepharaoh/secure-task-manager/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/bytepharaoh/secure-task-manager/discussions)
-- **Security:** Report security vulnerabilities privately via GitHub Security Advisories
-
----
-
-**⭐ If you find this project helpful, please give it a star on GitHub! ⭐**
-
----
-
-**Built with ❤️ using Django 6.0.2 and Python 3.12**
+Add the project license explicitly if you intend to distribute or open-source this repository.
