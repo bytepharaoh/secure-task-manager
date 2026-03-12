@@ -52,6 +52,31 @@ docker compose exec web python manage.py createsuperuser
 
 ## Local development without Docker
 
+The fastest local path is the bootstrap script:
+
+```bash
+./scripts/bootstrap.sh
+```
+
+What it does:
+
+- creates `.venv` if missing
+- installs Python dependencies from `requirements.txt`
+- creates `.env` from `.env.example` if needed
+- runs migrations
+- collects static files
+- runs `python manage.py check`
+- starts Django on `127.0.0.1:8000`
+
+Optional flags:
+
+```bash
+./scripts/bootstrap.sh --no-runserver
+./scripts/bootstrap.sh --host 0.0.0.0 --port 8000
+```
+
+Manual setup is still available if you want full control:
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
